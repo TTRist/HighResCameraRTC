@@ -150,12 +150,15 @@ RTC::ReturnCode_t HighResCamera::onExecute(RTC::UniqueId ec_id)
 		m_imageOut.write();
 
 	}
+	/*
 	else if (key == 'a') { // オートフォーカスON
 		cout << "Auto Focus ON\n";
-	}
-	else if (key == 'f') { // オートフォーカスOFF.m_focus値依存の固定焦点
-		cout << "Auto Focus OFF\n";
 		cam.set(CAP_PROP_AUTOFOCUS, 1);
+	}
+	*/
+	else if (key == 'f') { // オートフォーカスOFF.m_focus値依存の固定焦点
+		cout << "Auto Focus OFF		value = " << m_focus << endl;
+		cam.set(CAP_PROP_FOCUS, m_focus);
 	}
 	return RTC::RTC_OK;
 }
