@@ -11,6 +11,7 @@
 
 #include "HighResCamera.h"
 #include "opencv2/opencv.hpp"
+#include "confReader.hpp"
 
 #define WIDTH_HD	1920
 #define HEIGHT_HD	1080
@@ -96,11 +97,20 @@ RTC::ReturnCode_t HighResCamera::onInitialize()
 
 
 
-
+double window_h, window_w;
 RTC::ReturnCode_t HighResCamera::onActivated(RTC::UniqueId ec_id)
 {
 	cout << "Activated [HighResCamera]\n";
-	cam.open(1);//デバイスのオープン
+	// 設定ファイル読み込み
+	ifstream infile("./../../../MakedFile/setting.ini");
+	while (!infile) printf("\r読み込み失敗　パスが違うかも");
+	conf::setMap(conf::config_map, infile, R"(=|\s)");
+	infile.close();
+
+	window_h = conf::readMap("WINDOW_H");
+	window_w = conf::readMap("WINDOW_W");
+	int camID = conf::readMap("CamID");
+	cam.open(camID);//デバイスのオープン
 	if (!cam.isOpened()) {
 		cout << "MISS cnct cam\n";
 		return RTC::RTC_ERROR;
@@ -111,6 +121,10 @@ RTC::ReturnCode_t HighResCamera::onActivated(RTC::UniqueId ec_id)
 	cam.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT_HD);
 
 	cam.set(CV_CAP_PROP_FPS, 30);// 30fps
+
+	cout << "s...画像保存　img.png\n";
+	cout << "t...ポート送信\n";
+	cout << "f...焦点固定\n";
 
 	return RTC::RTC_OK;
 }
@@ -129,8 +143,8 @@ RTC::ReturnCode_t HighResCamera::onExecute(RTC::UniqueId ec_id)
 {
 	Mat frame, view;
 	cam.read(frame);
-	resize(frame, view, Size(), 960.0 / frame.cols, 540.0 / frame.rows);
-	imshow("ELP", view);//画像を表示．
+	resize(frame, view, Size(), window_w / frame.cols, window_h / frame.rows);
+	imshow("Capture", view);//画像を表示．
 	const int key = cv::waitKey(1000 / 30); //30fps
 	if (key == 's') { // 画像保存
 		cout << "Save Image\n";
