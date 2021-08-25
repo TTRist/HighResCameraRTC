@@ -13,10 +13,13 @@
 #include "opencv2/opencv.hpp"
 #include "confReader.hpp"
 
-#define WIDTH_HD	1920
-#define HEIGHT_HD	1080
-#define WIDTH_4K	3840
-#define HEIGHT_4K	2160
+
+#define WIDTH_HD		1280
+#define HEIGHT_HD		720
+#define WIDTH_FULLHD	1920
+#define HEIGHT_FULLHD	1080
+#define WIDTH_4K		3840
+#define HEIGHT_4K		2160
 
 using namespace std;
 using namespace cv;
@@ -109,6 +112,7 @@ RTC::ReturnCode_t HighResCamera::onActivated(RTC::UniqueId ec_id)
 
 	window_h = conf::readMap("WINDOW_H");
 	window_w = conf::readMap("WINDOW_W");
+	int fps = conf::readMap("FPS");
 	int camID = conf::readMap("CamID");
 	cam.open(camID);//デバイスのオープン
 	if (!cam.isOpened()) {
@@ -117,14 +121,30 @@ RTC::ReturnCode_t HighResCamera::onActivated(RTC::UniqueId ec_id)
 	}
 
 	//解像度の設定 http://linuberry.blog.fc2.com/blog-entry-13.html
-	cam.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH_HD);
-	cam.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT_HD);
-
-	cam.set(CV_CAP_PROP_FPS, 30);// 30fps
+	cout << "<< Select Resolusion >>\n";
+	cout << "1.HD\n";
+	cout << "2.fullHD\n";
+	cout << "3.4K\n";
+	int mode;
+	cin >> mode;
+	if (mode == 1) {
+		cam.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH_HD);
+		cam.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT_HD);
+	}
+	else if (mode == 2) {
+		cam.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH_FULLHD);
+		cam.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT_FULLHD);
+	}
+	else if (mode == 3) {
+		cam.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH_4K);
+		cam.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT_4K);
+	}
+	cam.set(CV_CAP_PROP_FPS, fps);// 30fps
 
 	cout << "s...画像保存　img.png\n";
 	cout << "t...ポート送信\n";
 	cout << "f...焦点固定\n";
+	cout << "l...基準線\n";
 
 	return RTC::RTC_OK;
 }
@@ -142,9 +162,10 @@ RTC::ReturnCode_t HighResCamera::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t HighResCamera::onExecute(RTC::UniqueId ec_id)
 {
 	Mat frame, view;
+	static bool line_view = false;
 	cam.read(frame);
 	resize(frame, view, Size(), window_w / frame.cols, window_h / frame.rows);
-	imshow("Capture", view);//画像を表示．
+	
 	const int key = cv::waitKey(1000 / 30); //30fps
 	if (key == 's') { // 画像保存
 		cout << "Save Image\n";
@@ -174,6 +195,24 @@ RTC::ReturnCode_t HighResCamera::onExecute(RTC::UniqueId ec_id)
 		cout << "Auto Focus OFF		value = " << m_focus << endl;
 		cam.set(CAP_PROP_FOCUS, m_focus);
 	}
+	else if (key == 'l') {
+		cout << "Line ON/OFF\n";
+		line_view = !line_view;
+	}
+
+
+
+
+	// 線描画
+	if (line_view) {
+		Point xAxis_s = {0, view.rows / 2}, xAxis_e = { view.cols, view.rows / 2 };
+		Point yAxis_s = {view.cols / 2, 0}, yAxis_e = {view.cols / 2, view.rows };
+		line(view, xAxis_s, xAxis_e, { 0, 0, 255 });
+		line(view, yAxis_s, yAxis_e, { 0, 255, 0 });
+	}
+
+	imshow("Capture", view);//画像を表示．
+
 	return RTC::RTC_OK;
 }
 
