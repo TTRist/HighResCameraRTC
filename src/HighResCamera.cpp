@@ -143,8 +143,9 @@ RTC::ReturnCode_t HighResCamera::onActivated(RTC::UniqueId ec_id)
 
 	cout << "s...画像保存　img.png\n";
 	cout << "t...ポート送信\n";
-	cout << "f...焦点固定\n";
+	cout << "f...焦点変更\n";
 	cout << "l...基準線\n";
+	cout << "e...露光調整";
 
 	return RTC::RTC_OK;
 }
@@ -192,15 +193,24 @@ RTC::ReturnCode_t HighResCamera::onExecute(RTC::UniqueId ec_id)
 	}
 	*/
 	else if (key == 'f') { // オートフォーカスOFF.m_focus値依存の固定焦点
-		cout << "Auto Focus OFF		value = " << m_focus << endl;
-		cam.set(CAP_PROP_FOCUS, m_focus);
+		double focusVal;
+		cout << "フォーカス値：";
+		cin >> focusVal;
+		cam.set(CAP_PROP_AUTOFOCUS, false);
+		cam.set(CAP_PROP_FOCUS, focusVal);
 	}
 	else if (key == 'l') {
 		cout << "Line ON/OFF\n";
 		line_view = !line_view;
 	}
 
-
+	else if (key == 'e') {
+		double propVal;
+		cout << "露光値：";
+		cin >> propVal;
+		cam.set(CAP_PROP_AUTO_EXPOSURE, 1); //manual mode
+		cam.set(CAP_PROP_EXPOSURE, propVal);
+	}
 
 
 	// 線描画
